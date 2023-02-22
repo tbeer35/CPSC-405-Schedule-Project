@@ -17,8 +17,8 @@ int executeCmd(char** params, int nparams);
 #define MAX_COMMAND_LENGTH 100
 #define MAX_NUMBER_OF_PARAMS 10
 
-enum cmds        { FORK=0, SETPID,   SHOWPID,   WAIT,   EXIT,   SLEEP,   WAKEUP,   PS,   SCHEDULE,  TIMER,    HELP,   QUIT };
-char *cmdstr[] = {"fork", "Setpid", "currpid",  "wait", "exit", "sleep", "wakeup", "ps",   "schedule", "timer", "help", "quit"};
+enum cmds        { FORK=0, SETPID, SETNICE,  SHOWPID,   WAIT,   EXIT,   SLEEP,   WAKEUP,   PS,   SCHEDULE,  TIMER,    HELP,  QUIT };
+char *cmdstr[] = {"fork", "Setpid", "Setnice", "currpid",  "wait", "exit", "sleep", "wakeup", "ps",   "schedule", "timer", "help", "quit"};
 
 int curr_proc_id = 0;
 
@@ -40,6 +40,7 @@ int main()
         nparams = 0; // > Fork 4 command sets nparams to 2
         char* username = getenv("USER");
         printf("%s@shell %d> ", username, ++cmdCount);
+	
         if(fgets(cmd, sizeof(cmd), stdin) == NULL) break;
         if(cmd[strlen(cmd)-1] == '\n') cmd[strlen(cmd)-1] = '\0';
         parseCmd(cmd, params, &nparams);
@@ -52,7 +53,7 @@ int main()
 
 // Split cmd into array of parameters
 void parseCmd(char* cmd, char** params, int *nparams)
-{       
+{  
     for(int i = 0; i < MAX_NUMBER_OF_PARAMS; i++) {
         params[i] = strsep(&cmd, " ");
         if(params[i] == NULL) break;
@@ -88,6 +89,15 @@ int executeCmd(char** params, int nparams)
         else
             curr_proc_id = atoi(params[1]);
         break;
+    case SETNICE:
+	if (nparams < 2){
+		printf("Setnice requires pid then nice value"); 
+	}else{
+		int snPID = atoi(params[1]);
+		int snNice = atoi(params[2]);
+		setnice(snPID, snNice);	//THIS IS THE ISSUE CAUSING A SEG FAULT MAKE A BETTER METHOD NOOB	
+	}
+	break;
     case SHOWPID:
         //printf("Current pid: %d\n", curr_proc_id);
         printf("Current pid: %d\n", curr_proc->pid);
@@ -153,7 +163,7 @@ int executeCmd(char** params, int nparams)
         }
         break;
     case HELP:
-        printf("Commands: fork, wait, exit, ps, Setpid, currpid, sleep, wakeup, timer, help\n");
+        printf("Commands: fork, wait, exit, ps, Setpid, currpid, sleep, wakeup, timer, help, Setnice\n");
         break;
     case QUIT:
         rc = 0;

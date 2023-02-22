@@ -136,6 +136,7 @@ Fork(int fork_proc_id)
   pid = np->pid;
   np->state = RUNNABLE;
   strcpy(np->name, fork_proc->name);
+  int nice = 0;
   return pid;
 }
 
@@ -294,6 +295,9 @@ Kill(int pid)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+
+int sched_latency = 100; //total amount of ms to give out in time slices
+int min_granularity = 10; //minimum time slice length //TRY BOTH AS STATIC IF NOT WORKING
 void
 scheduler(void)
 {
@@ -319,6 +323,15 @@ scheduler(void)
 
 }
 
+//NEW
+//takes in a PID and nice value from the user
+//sets the nice value for that PID to the given nice
+//also updates the weight for the proc 
+void
+setnice(int pid, int niceVal){
+	struct proc *cur = findproc(pid);
+	cur->nice = niceVal;
+}
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
@@ -329,7 +342,7 @@ procdump(void)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->pid > 0)
-      printf("pid: %d, parent: %d state: %s\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state]);
+      printf("pid: %d, parent: %d, state: %s, nice: %d\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->nice);
 }
 
 
