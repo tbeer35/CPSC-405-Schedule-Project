@@ -58,5 +58,10 @@ struct proc {
   char ofiles[NFILE];          // Open files
   char cwd[CWD];               // Current directory
   char name[PNAME];            // Process name (debugging)
+  //NEW
+  int nice;		       //nice value
+  int weight;		       //weight corresponding to nice value
+  int timeslice;	       //how long each struct proc gets
+  int vruntime;		       //how long each proc has run in total
 };
 
