@@ -147,7 +147,7 @@ Fork(int fork_proc_id)
   pid = np->pid;
   np->state = RUNNABLE;
   strcpy(np->name, fork_proc->name);
-  int nice = 0;
+  //int nice = 0;
   return pid;
 }
 
@@ -315,25 +315,86 @@ scheduler(void)
 // A continous loop in real code
 //  if(first_sched) first_sched = 0;
 //  else sti();
-
+  int totalW = getTotalWeight();
+  double temp = 0.0;
+  //int timeSl = 0;
+  int lowestVRT = curr_proc->vruntime;
   curr_proc->state = RUNNABLE;
-
+  assignTimeslice();
   struct proc *p;
 
+  //get the lowest vruntime
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p == curr_proc || p->state != RUNNABLE)
-      continue;
+	if(p->pid > 0)//ADDED THIS
+	if(p->vruntime < lowestVRT){
+		lowestVRT = p->vruntime;
+	}
+  }
+  release(&ptable.lock);
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ //loop thru all procs which are stored in ptable
+    if(p->pid > 0)//ADDED THIS
+    if(p == curr_proc || p->state != RUNNABLE){ // if the proc is the current proc and its running skip it//skip unknown/unused????????
+	//continue;
+    }
 
     // Switch to chosen process.
-    curr_proc = p;
-    p->state = RUNNING;
-    break;
+    curr_proc = p; //set the cur proc to which ever one we're on and set it to running
+    if(p->vruntime == lowestVRT){
+    	p->state = RUNNING;
+	if(p->pid == 0){
+		continue;
+	}
+	if(p->weight == 0){
+		p->weight = 1024;
+	}
+	temp = (1024.0/p->weight) * p->timeslice;
+	p->vruntime = p->vruntime + temp;
+	break;
+    }
   }
   release(&ptable.lock);
 
 }
 
+void
+assignTimeslice(){
+	int totalW = getTotalWeight();
+    	float timeSl = 0.0;
+	int w = 0;
+      	struct proc *p;
+
+      	acquire(&ptable.lock);
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ //loop thru all procs which are stored in ptable
+		//assign timeslices
+		//if no weights have been assigned give all procs a timeslice equal to the min_granularity
+		if(totalW == 0){
+			p->timeslice = min_granularity;
+			continue;
+		}
+		w = p->weight;
+		timeSl = sched_latency * w / totalW; //losing some decimels here
+		if(timeSl < min_granularity){
+			timeSl = min_granularity;
+		}
+		p->timeslice = timeSl;
+	}
+	release(&ptable.lock);
+}
+
+int
+getTotalWeight(){
+	int totalW = 0;
+	struct proc *p;
+	acquire(&ptable.lock);
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+		totalW = totalW + p->weight;
+	}
+	release(&ptable.lock);
+	return totalW;
+}
 //NEW
 //takes in a PID and nice value from the user
 //sets the nice value for that PID to the given nice
@@ -356,8 +417,8 @@ procdump(void)
   struct proc *p;
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->pid > 0)
-      printf("pid: %d, parent: %d, state: %s, nice: %d, weight: %d, timeslice: %d\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->nice, p-> weight, p->timeslice);
+    if(p->pid > 0) //THIS IS GOOD
+      printf("pid: %d, parent: %d, state: %s, nice: %d, weight: %d, timeslice: %d, vruntime: %d\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->nice, p-> weight, p->timeslice, p->vruntime);
 }
 
 
