@@ -10,6 +10,17 @@
 #include "defs.h"
 #include "proc.h"
 
+static const int niceTable[40] = {
+	/* -20 */ 88761, 71755, 56483, 46273, 36291,
+	/* -15 */ 29154, 23254, 18705, 14949, 11916,
+	/* -10 */ 9548, 7620, 6100, 4904, 3906,
+	/* -5 */ 3121, 2501, 1991, 1586, 1277,
+	/* 0 */ 1024, 820, 655, 526, 423,
+	/* 5 */ 335, 272, 215, 172, 137,
+	/* 10 */ 110, 87, 70, 56, 45,
+	/* 15 */ 36, 29, 23, 18, 15,
+};
+
 static void wakeup1(int chan);
 
 // Dummy lock routines. Not needed for lab
@@ -331,6 +342,10 @@ void
 setnice(int pid, int niceVal){
 	struct proc *cur = findproc(pid);
 	cur->nice = niceVal;
+	//Assign the weight based on nice
+	int tempNice = niceVal + 20;
+	int w = niceTable[tempNice];
+	cur->weight = w;
 }
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
@@ -342,7 +357,7 @@ procdump(void)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->pid > 0)
-      printf("pid: %d, parent: %d, state: %s, nice: %d\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->nice);
+      printf("pid: %d, parent: %d, state: %s, nice: %d, weight: %d, timeslice: %d\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->nice, p-> weight, p->timeslice);
 }
 
 
