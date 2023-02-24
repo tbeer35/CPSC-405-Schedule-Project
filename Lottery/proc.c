@@ -9,6 +9,7 @@
 #include "types.h"
 #include "defs.h"
 #include "proc.h"
+#include <time.h>
 
 static void wakeup1(int chan);
 
@@ -107,6 +108,7 @@ userinit(void)
   strcpy(p->name, "userinit"); 
   p->state = RUNNING;
   curr_proc = p;
+//  p->tickets = 10;
   return p->pid;
 }
 
@@ -135,6 +137,7 @@ Fork(int fork_proc_id)
  
   pid = np->pid;
   np->state = RUNNABLE;
+  np->tickets = 10;
   strcpy(np->name, fork_proc->name);
   return pid;
 }
@@ -287,6 +290,24 @@ Kill(int pid)
   return -1;
 }
 
+
+int getMaxTick () {
+   int maxTick;
+   struct proc *p;
+   acquire(&ptable.lock);
+   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->pid > 0)
+	if(p->state == RUNNABLE){
+      maxTick = maxTick + p->tickets;
+	printf("The number of tickets is: %d", maxTick);
+}
+   }
+   release(&ptable.lock);
+   return maxTick;
+}
+
+
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -294,26 +315,40 @@ Kill(int pid)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-void
-scheduler(void)
+void scheduler(void)
 {
 // A continous loop in real code
 //  if(first_sched) first_sched = 0;
 //  else sti();
+  
+  int maxTick = getMaxTick();
+
+  srand(time(NULL));
+
+  int randomNum = rand() % maxTick +  1;
+
+  int counter = 0;
+
+  printf("This is a random number: %d", randomNum);
 
   curr_proc->state = RUNNABLE;
 
   struct proc *p;
-
+	printf("about to loop in scheduler");
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p == curr_proc || p->state != RUNNABLE)
-      continue;
-
+	printf("in the for");
+    if (p->pid > 0)         
     // Switch to chosen process.
     curr_proc = p;
-    p->state = RUNNING;
-    break;
+    counter = counter + curr_proc->tickets;
+printf("counter is %d", counter);
+	if (counter > randomNum) {
+	printf("RIGHT ONE RIGHT ONE %d", randomNum);	    
+           p->state = RUNNING;
+           break;
+        }
+printf("didn't get the right one");
   }
   release(&ptable.lock);
 
@@ -329,7 +364,10 @@ procdump(void)
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->pid > 0)
-      printf("pid: %d, parent: %d state: %s\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state]);
+      printf("pid: %d, parent: %d state: %s, tickets: %d\n", p->pid, p->parent == 0 ? 0 : p->parent->pid, procstatep[p->state], p->tickets);
 }
 
-
+void tickSet(int tPID, int numTick) {
+   struct proc *cur = findproc(tPID);
+   cur->tickets = numTick;
+}

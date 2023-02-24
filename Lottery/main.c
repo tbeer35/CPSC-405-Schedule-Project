@@ -11,14 +11,16 @@
 #include "defs.h"
 #include "proc.h"
 
+void tickSet(int tPID, int numTick);
+
 void parseCmd(char* cmd, char** params, int *nparams);
 int executeCmd(char** params, int nparams);
 
 #define MAX_COMMAND_LENGTH 100
 #define MAX_NUMBER_OF_PARAMS 10
 
-enum cmds        { FORK=0, SETPID,   SHOWPID,   WAIT,   EXIT,   SLEEP,   WAKEUP,   PS,   SCHEDULE,  TIMER,    HELP,   QUIT };
-char *cmdstr[] = {"fork", "Setpid", "currpid",  "wait", "exit", "sleep", "wakeup", "ps",   "schedule", "timer", "help", "quit"};
+enum cmds        { FORK=0, SETPID,   TICKSET,   SHOWPID,   WAIT,   EXIT,   SLEEP,   WAKEUP,   PS,   SCHEDULE,  TIMER,    HELP,   QUIT };
+char *cmdstr[] = {"fork", "Setpid", "tickset",  "currpid",  "wait", "exit", "sleep", "wakeup", "ps",   "schedule", "timer", "help", "quit"};
 
 int curr_proc_id = 0;
 
@@ -82,6 +84,15 @@ int executeCmd(char** params, int nparams)
         int fpid = Fork(pid);
         printf("pid: %d forked: %d\n", pid, fpid);
         break;
+    case TICKSET:
+	if (nparams < 2){
+		printf("Naughty Naughty");
+	} else {
+		int tPID = atoi(params[1]);
+		int numTick = atoi(params[2]);
+		tickSet(tPID, numTick);
+	}
+	break;
     case SETPID:
         if (nparams == 1)
             printf("setpid cmd requires pid parameter\n");
@@ -153,7 +164,7 @@ int executeCmd(char** params, int nparams)
         }
         break;
     case HELP:
-        printf("Commands: fork, wait, exit, ps, Setpid, currpid, sleep, wakeup, timer, help\n");
+        printf("Commands: fork, tickset, wait, exit, ps, Setpid, currpid, sleep, wakeup, timer, help\n");
         break;
     case QUIT:
         rc = 0;

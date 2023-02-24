@@ -58,5 +58,6 @@ struct proc {
   char ofiles[NFILE];          // Open files
   char cwd[CWD];               // Current directory
   char name[PNAME];            // Process name (debugging)
+  int tickets;
 };
 
