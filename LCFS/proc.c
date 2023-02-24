@@ -147,7 +147,6 @@ Fork(int fork_proc_id)
   pid = np->pid;
   np->state = RUNNABLE;
   strcpy(np->name, fork_proc->name);
-  //int nice = 0;
   return pid;
 }
 
@@ -326,7 +325,7 @@ scheduler(void)
   //get the lowest vruntime
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-	if(p->pid > 0)//ADDED THIS
+	if(p->pid > 0)
 	if(p->vruntime < lowestVRT){
 		lowestVRT = p->vruntime;
 	}
@@ -335,10 +334,7 @@ scheduler(void)
 
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ //loop thru all procs which are stored in ptable
-    if(p->pid > 0)//ADDED THIS
-    if(p == curr_proc || p->state != RUNNABLE){ // if the proc is the current proc and its running skip it//skip unknown/unused????????
-	//continue;
-    }
+    if(p->pid > 0)
 
     // Switch to chosen process.
     curr_proc = p; //set the cur proc to which ever one we're on and set it to running
@@ -375,7 +371,7 @@ assignTimeslice(){
 			continue;
 		}
 		w = p->weight;
-		timeSl = sched_latency * w / totalW; //losing some decimels here
+		timeSl = sched_latency * w / totalW;
 		if(timeSl < min_granularity){
 			timeSl = min_granularity;
 		}
