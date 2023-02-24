@@ -299,30 +299,23 @@ Kill(int pid)
 }
 
 // Per-CPU process scheduler.
-// Each CPU calls scheduler() after setting itself up.
-// Scheduler never returns.  It loops, doing:
-//  - choose a process to run
-//  - swtch to start running that process
-//  - eventually that process transfers control
-//      via swtch back to the scheduler.
+// Gets the total weight and calls to assign time slices for all procs
+// then gets the lowest vruntime and loops through all processes to find the one with the lowest vruntime
+// Sets that process to running and increments its vruntime
 
 int sched_latency = 100; //total amount of ms to give out in time slices
-int min_granularity = 10; //minimum time slice length //TRY BOTH AS STATIC IF NOT WORKING
+int min_granularity = 10; //minimum time slice length
 void
 scheduler(void)
 {
-// A continous loop in real code
-//  if(first_sched) first_sched = 0;
-//  else sti();
-  int totalW = getTotalWeight();
-  double temp = 0.0;
-  //int timeSl = 0;
+  int totalW = getTotalWeight(); //get the total weight
+  double temp = 0.0; //create variables
   int lowestVRT = curr_proc->vruntime;
-  curr_proc->state = RUNNABLE;
-  assignTimeslice();
-  struct proc *p;
+  curr_proc->state = RUNNABLE; //put the currently running proc into the runnable pool
+  assignTimeslice(); // call assign timeslices
+  struct proc *p; //create a proc to call
 
-  //get the lowest vruntime
+  //get the lowest vruntime by looping through all legal procs
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
 	if(p->pid > 0)
@@ -343,10 +336,10 @@ scheduler(void)
 	if(p->pid == 0){
 		continue;
 	}
-	if(p->weight == 0){
+	if(p->weight == 0){ //if a default weight still hasn't been set to 1024 set it here
 		p->weight = 1024;
 	}
-	temp = (1024.0/p->weight) * p->timeslice;
+	temp = (1024.0/p->weight) * p->timeslice; //calculate and assign vruntime
 	p->vruntime = p->vruntime + temp;
 	break;
     }
@@ -355,10 +348,13 @@ scheduler(void)
 
 }
 
+//Assign Time Slice
+//loop through all procs and assign their timeslices based of what % of the sched_latency they make up
+//make sure they aren't less than min_granularity
 void
 assignTimeslice(){
-	int totalW = getTotalWeight();
-    	float timeSl = 0.0;
+	int totalW = getTotalWeight(); //get the total weights
+    	float timeSl = 0.0; //assign variables
 	int w = 0;
       	struct proc *p;
 
@@ -370,9 +366,9 @@ assignTimeslice(){
 			p->timeslice = min_granularity;
 			continue;
 		}
-		w = p->weight;
-		timeSl = sched_latency * w / totalW;
-		if(timeSl < min_granularity){
+		w = p->weight; //set variable w
+		timeSl = sched_latency * w / totalW; //calculate timeslice 
+		if(timeSl < min_granularity){ //make sure its bigger or the same size as min gran
 			timeSl = min_granularity;
 		}
 		p->timeslice = timeSl;
@@ -380,16 +376,18 @@ assignTimeslice(){
 	release(&ptable.lock);
 }
 
+//Get Total Weight
+//Add up all the weights and return the total
 int
 getTotalWeight(){
-	int totalW = 0;
+	int totalW = 0; //set variables
 	struct proc *p;
 	acquire(&ptable.lock);
-	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ //loop through all procs
 		totalW = totalW + p->weight;
 	}
 	release(&ptable.lock);
-	return totalW;
+	return totalW; //return the total
 }
 //NEW
 //takes in a PID and nice value from the user
@@ -397,8 +395,8 @@ getTotalWeight(){
 //also updates the weight for the proc 
 void
 setnice(int pid, int niceVal){
-	struct proc *cur = findproc(pid);
-	cur->nice = niceVal;
+	struct proc *cur = findproc(pid); //get the current proc
+	cur->nice = niceVal; //set it's nice to what was passed in
 	//Assign the weight based on nice
 	int tempNice = niceVal + 20;
 	int w = niceTable[tempNice];

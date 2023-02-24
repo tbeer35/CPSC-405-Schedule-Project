@@ -90,12 +90,12 @@ int executeCmd(char** params, int nparams)
             curr_proc_id = atoi(params[1]);
         break;
     case SETNICE:
-	if (nparams < 2){
+	if (nparams < 2){ //make sure theres enough params
 		printf("Setnice requires pid then nice value"); 
 	}else{
-		int snPID = atoi(params[1]);
+		int snPID = atoi(params[1]); //set params and convert them to ints
 		int snNice = atoi(params[2]);
-		setnice(snPID, snNice);	//THIS IS THE ISSUE CAUSING A SEG FAULT MAKE A BETTER METHOD NOOB	
+		setnice(snPID, snNice);	//call setnice
 	}
 	break;
     case SHOWPID:

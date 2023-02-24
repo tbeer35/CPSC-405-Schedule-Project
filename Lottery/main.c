@@ -85,12 +85,12 @@ int executeCmd(char** params, int nparams)
         printf("pid: %d forked: %d\n", pid, fpid);
         break;
     case TICKSET:
-	if (nparams < 2){
-		printf("Naughty Naughty");
+	if (nparams < 2){ //make sure theres enough params
+		printf("have to enter PID then Ticket Number");
 	} else {
-		int tPID = atoi(params[1]);
+		int tPID = atoi(params[1]); //set params and convert them to ints
 		int numTick = atoi(params[2]);
-		tickSet(tPID, numTick);
+		tickSet(tPID, numTick); //call tickset
 	}
 	break;
     case SETPID:

@@ -290,65 +290,51 @@ Kill(int pid)
   return -1;
 }
 
-
+//Get Max Tick
+//loop through all procs and find the maximum number of tickets then return it
 int getMaxTick () {
-   int maxTick;
+   int maxTick; //set variables
    struct proc *p;
    acquire(&ptable.lock);
-   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ //loop through all legal procs
       if(p->pid > 0)
 	if(p->state == RUNNABLE || p->state == RUNNING){
-      		maxTick = maxTick + p->tickets;
+      		maxTick = maxTick + p->tickets; //increment max tickets
 	}
    }
-   //printf("Max tickets is %d\n", maxTick);
    release(&ptable.lock);
-   return maxTick;
+   return maxTick; //return the max number
 }
 
 
 
-// Per-CPU process scheduler.
-// Each CPU calls scheduler() after setting itself up.
-// Scheduler never returns.  It loops, doing:
-//  - choose a process to run
-//  - swtch to start running that process
-//  - eventually that process transfers control
-//      via swtch back to the scheduler.
+//Scheduler
+//gets the max tickets, generates a random number based on the max tickets
+//creates a counter that increments to simulate different ranges for tickets 
+//once a procs ticket gets picked it sets it to running
 void scheduler(void)
 {
-// A continous loop in real code
-//  if(first_sched) first_sched = 0;
-//  else sti();
-  
-  int maxTick = getMaxTick();
+  int maxTick = getMaxTick(); //get max tickets
 
   srand(time(NULL));
 
-  int randomNum = rand() % maxTick +  1;
+  int randomNum = rand() % maxTick +  1; //get a random number
 
-  int counter = 0;
+  int counter = 0; //set a counter
 
-  //printf("This is a random number: %d", randomNum);
-
-  curr_proc->state = RUNNABLE;
+  curr_proc->state = RUNNABLE; //put the current proc back in the runable pool
 
   struct proc *p;
-//	printf("about to loop in scheduler");
   acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-//	printf("in the for");
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){ //loop through all legal procs
     if (p->pid > 0)         
     // Switch to chosen process.
     curr_proc = p;
-    counter = counter + curr_proc->tickets;
-//printf("counter is %d", counter);
-	if (counter > randomNum) {
-//	printf("RIGHT ONE RIGHT ONE %d", randomNum);	    
-           p->state = RUNNING;
+    counter = counter + curr_proc->tickets; //increment the counter
+	if (counter > randomNum) { //if it picks one of the current procs numbers
+           p->state = RUNNING; //set the current proc to running then break out
            break;
         }
-//printf("didn't get the right one");
   }
   release(&ptable.lock);
 
