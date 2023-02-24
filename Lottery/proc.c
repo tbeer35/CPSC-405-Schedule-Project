@@ -297,11 +297,11 @@ int getMaxTick () {
    acquire(&ptable.lock);
    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->pid > 0)
-	if(p->state == RUNNABLE){
-      maxTick = maxTick + p->tickets;
-	printf("The number of tickets is: %d", maxTick);
-}
+	if(p->state == RUNNABLE || p->state == RUNNING){
+      		maxTick = maxTick + p->tickets;
+	}
    }
+   //printf("Max tickets is %d\n", maxTick);
    release(&ptable.lock);
    return maxTick;
 }
@@ -329,26 +329,26 @@ void scheduler(void)
 
   int counter = 0;
 
-  printf("This is a random number: %d", randomNum);
+  //printf("This is a random number: %d", randomNum);
 
   curr_proc->state = RUNNABLE;
 
   struct proc *p;
-	printf("about to loop in scheduler");
+//	printf("about to loop in scheduler");
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-	printf("in the for");
+//	printf("in the for");
     if (p->pid > 0)         
     // Switch to chosen process.
     curr_proc = p;
     counter = counter + curr_proc->tickets;
-printf("counter is %d", counter);
+//printf("counter is %d", counter);
 	if (counter > randomNum) {
-	printf("RIGHT ONE RIGHT ONE %d", randomNum);	    
+//	printf("RIGHT ONE RIGHT ONE %d", randomNum);	    
            p->state = RUNNING;
            break;
         }
-printf("didn't get the right one");
+//printf("didn't get the right one");
   }
   release(&ptable.lock);
 
